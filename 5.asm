@@ -1,0 +1,73 @@
+DATA SEGMENT 
+BUF DW 22,-12,80,-6,-70,-9,127,-10,00,40
+N    EQU($-BUF)/2
+DATA ENDS
+STACK SEGMENT STACK
+      DB 200 DUP(0)
+STACK ENDS
+CODE SEGMENT
+ASSUME CS:CODE,DS:DATA,SS:STACK
+START:MOV AX,DATA
+      MOV DS,AX
+      MOV CX,N
+      DEC CX
+
+LP1:  MOV DX,CX
+      MOV BX,0
+
+LP2:  MOV AX,BUF[BX]
+      CMP AX,BUF[BX+2]
+      JGE LP3
+      XCHG AX,BUF[BX+2]
+      MOV BUF[BX],AX  
+
+LP3:  ADD BX,2
+      DEC CX
+      JNE LP2
+      MOV CX,DX
+      LOOP LP1
+      MOV CX,N
+      MOV BX,OFFSET BUF
+XS:  MOV AX,BUF[BX]
+
+      CALL OUTPUT  ;调用子程序，输出十进制有符号数
+      MOV DL,20H
+      MOV AH,2
+      INT 21H
+          ADD BX,2
+      LOOP XS
+      MOV AH,4CH
+      INT 21H
+    
+
+OUTPUT  PROC ;输出有符号数 
+ PUSH AX
+ CMP AX,0
+ JGE M1
+ MOV DL,2DH
+ MOV AH,02H
+ INT 21H
+ POP AX
+ NEG AX
+ JMP M2         
+M1: POP AX
+M2: PUSH BX
+    PUSH CX
+    MOV  BX,10
+    XOR  CX,CX
+Q0: XOR  DX,DX
+    DIV  BX
+    OR  DX,0E30H
+    PUSH  DX
+    INC  CX
+    CMP  AX,0
+    JNZ  Q0
+Q1: POP  AX
+    INT  10H
+    LOOP  Q1
+    POP CX
+    POP BX
+    RET
+    OUTPUT ENDP
+    CODE ENDS
+END START
